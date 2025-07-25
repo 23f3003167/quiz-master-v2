@@ -49,7 +49,7 @@ export default {
             const description = prompt("New description", chapter.description)
             if (name && description) {
                 axios.put(`http://localhost:5000/api/admin/chapters/${chapter.id}`, {name: name, description: description}, {headers: {Authorization: this.token}})
-            .then(() => {this.fetch()})
+                .then(() => {this.fetch()})
             }
         },
         del(id) {

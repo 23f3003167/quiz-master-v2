@@ -2,7 +2,9 @@
   <nav>
     <router-link to="/">Home</router-link> |
     <router-link to="/admin/subjects">Subjects</router-link> | 
-    <router-link to="/admin/subjects/1/chapters">Chapters</router-link>
+    <router-link to="/admin/subjects/1/chapters">Chapters</router-link> |
+    <router-link to="/admin/chapters/1/quizzes">Quizzes</router-link> | 
+    <router-link to="/admin/quizzes/1/questions">Questions</router-link>
   </nav>
   <router-view/>
 </template>
