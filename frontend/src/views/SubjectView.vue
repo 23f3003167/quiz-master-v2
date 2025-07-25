@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="container mt-4">
         <h2>Subjects</h2>
         <form @submit.prevent="add">
             <input v-model="name" placeholder="Name" class="formal-control mb-2" />
@@ -10,10 +10,10 @@
         <div class="mt-4" v-for="s in subjects" :key="s.id">
             <h5>{{ s.name }}<small>{{ s.description }}</small></h5>
             <button class="btn btn-sm btn-warning" @click="edit(s)">
-                Edit Subject
+                Edit
             </button>
-            <button class="btn btn-sm btn-danger" @click="delete(s.id)">
-                Delete Subject
+            <button class="btn btn-sm btn-danger" @click="del(s.id)">
+                Delete
             </button>
         </div>
     </div>
@@ -34,12 +34,12 @@ export default {
     },
     methods: {
         fetch(){
-            axios.get("/api/admin/subjects",{
+            axios.get("http://localhost:5000/api/admin/subjects",{
                 headers: {Authorization: this.token}
             }).then(res => this.subjects = res.data)
         },
         add() {
-            axios.post("/api/admin/subjects",{
+            axios.post("http://localhost:5000/api/admin/subjects",{
                 name: this.name,
                 description: this.description
             }, { headers: {Authorization: this.token}})
@@ -53,15 +53,15 @@ export default {
             const name = prompt("New name", subj.name)
             const description = prompt("New Description", subj.description)
             if (name && description) {
-                axios.put(`/api/admin/subjects/${subj.id}`,{
+                axios.put(`http://localhost:5000/api/admin/subjects/${subj.id}`,{
                 name: name,
                 description: description
             }, {headers: {Authorization: this.token}})
                 .then(() => this.fetch())
             }
         },
-        delete(id) {
-            axios.delete(`/api/admin/subjects/${id}`,{
+        del(id) {
+            axios.delete(`http://localhost:5000/api/admin/subjects/${id}`,{
                 headers: {Authorization: this.token}
             }).then(() => this.fetch())
         }

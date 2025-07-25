@@ -11,10 +11,7 @@ def token_required(role=None):
     def decorator(f):
         @wraps(f)
         def wrapper(*args, **kwargs):
-            auth_header = request.headers.get('Authorization', '')
-            if not auth_header.startswith('Bearer '):
-                return jsonify({"message": "Token missing or malformed"}), 403
-            token = auth_header.split(" ")[1]
+            token = request.headers.get('Authorization')
             if not token:
                  return jsonify({"message": "Token missing"}), 403
             

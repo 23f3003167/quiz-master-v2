@@ -2,8 +2,10 @@ from flask import Flask, request, jsonify, current_app
 from models import db, User
 from auth import auth
 from admin import admin
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///quiz_master.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
