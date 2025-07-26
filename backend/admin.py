@@ -5,6 +5,19 @@ from datetime import datetime
 
 admin = Blueprint("admin", __name__)
 
+@admin.route('/api/admin/users', methods=['GET'])
+@token_required(role='admin')
+def view_users(current_user):
+    users = User.query.filter_by(role="user").all()
+    return jsonify([{
+        "id": u.id,
+        "email": u.username,
+        "full_name": u.full_name,
+        "qualification": u.qualification,
+        "dob": u.dob
+    } for u in users])
+
+
 @admin.route("/api/admin/subjects", methods=['POST'])
 @token_required(role='admin')
 def create_subject(current_user):

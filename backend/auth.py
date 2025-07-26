@@ -18,7 +18,7 @@ def token_required(role=None):
             try:
                 data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=['HS256'])
                 user = User.query.get(data['user_id'])
-                if role and user.role != user.role:
+                if role and role != user.role:
                     return jsonify({"message":"Unauthorized"}), 403
             except:
                 return jsonify({"message":"Token Invalid or expired"}), 403
@@ -30,7 +30,7 @@ def token_required(role=None):
 @auth.route("/register", methods=['POST'])
 def register():
     data = request.json
-    email=data.get('password')
+    email=data.get('email')
     password = data.get('password')
     full_name=data.get('full_name')
     qualification=data.get('qualification')
@@ -52,7 +52,7 @@ def register():
 
     return jsonify({"message":"User registered successfully"}), 201
 
-@auth.route("/login", methods=['POST'])
+@auth.route("/", methods=['POST'])
 def login():
     data = request.json
     email=data.get('email')
