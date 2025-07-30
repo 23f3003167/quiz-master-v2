@@ -36,7 +36,7 @@ export default {
             quiz: {},
             questions: [],
             answers: {},
-            timeLeft: 0,
+            timeRemaining: 0,
             timeText: '',
             startTime: null,
             token: localStorage.getItem("token")
@@ -53,7 +53,7 @@ export default {
                 this.questions = res.data.questions,
                 this.startTime = new Date().toISOString()
                 const [min, sec] = this.quiz.time_duration.split(":").map(Number)
-                this.timeLeft = (min * 60) + sec
+                this.timeRemaining = (min * 60) + sec
                 this.startTimer()
             })
             .catch(err => {
@@ -62,14 +62,14 @@ export default {
         },
         startTimer() {
             this.timer = setInterval(() => {
-                const min = Math.floor(this.timeLeft/60).toString().padStart(2,'0')
-                const sec = (this.timeLeft%60).toString().padStart(2,'0')
+                const min = Math.floor(this.timeRemaining/60).toString().padStart(2,'0')
+                const sec = (this.timeRemaining%60).toString().padStart(2,'0')
                 this.timeText = `Time Remaining: ${min}:${sec}`
-                if (this.timeLeft <= 0) {
+                if (this.timeRemaining <= 0) {
                     clearInterval(this.timer)
                     this.submitQuiz()
                 }
-                this.timeLeft--;
+                this.timeRemaining--;
             }, 1000)
         },
         submitQuiz() {
