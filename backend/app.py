@@ -3,6 +3,7 @@ from models import db, User
 from auth import auth
 from admin import admin
 from flask_cors import CORS
+from user import user
 
 app = Flask(__name__)
 CORS(app)
@@ -15,6 +16,7 @@ db.init_app(app)
 
 app.register_blueprint(auth)
 app.register_blueprint(admin)
+app.register_blueprint(user)
 
 if __name__=="__main__":
     with app.app_context():

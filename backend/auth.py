@@ -18,11 +18,10 @@ def token_required(role=None):
             try:
                 data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=['HS256'])
                 user = User.query.get(data['user_id'])
-                if role and role != user.role:
+                if role and user.role != role:
                     return jsonify({"message":"Unauthorized"}), 403
             except:
                 return jsonify({"message":"Token Invalid or expired"}), 403
-            
             return f(user, *args, **kwargs)
         return wrapper
     return decorator
