@@ -113,3 +113,20 @@ def quiz_summary(current_user):
         "quiz_titles": list(highest_scores.keys()),
         "scores_list": list(highest_scores.values())
     })
+
+@user.route("/api/user/search", methods=['POST'])
+@token_required(role='user')
+def user_search():
+    data = request.json
+    search_term = data.get("search_term","").strip()
+    filter_by = data.get("filter_by",[])
+
+    results = []
+    if "subjects" in filter_by:
+            subjects = Subject.query.filter(Subject.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"subject", "name": s.name} for s in subjects])
+    if "quizzes" in filter_by:
+            quizzes = Quiz.query.filter(Quiz.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"quiz", "name": q.name} for q in quizzes])
+
+    return jsonify(results)

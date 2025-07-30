@@ -191,3 +191,34 @@ def delete_question(current_user, id):
     db.session.delete(Question.query.get_or_404(id))
     db.session.commit()
     return jsonify({"message":"Question deleted successfully"})
+
+@admin.route("/api/admin/search", methods=['POST'])
+@token_required(role='admin')
+def admin_search():
+    data = request.json
+    search_term = data.get("search_term","").strip()
+    filter_by = data.get("filter_by",[])
+
+    results = []
+
+    if "subjects" in filter_by:
+            subjects = Subject.query.filter(Subject.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"subject", "name": s.name} for s in subjects])
+    if "quizzes" in filter_by:
+            quizzes = Quiz.query.filter(Quiz.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"quiz", "name": q.name} for q in quizzes])
+    if "users" in filter_by:
+            users = User.query.filter(User.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"user", "name": u.full_name, "email":u.username} for u in users])
+    if "questions" in filter_by:
+            questions = Question.query.filter(Question.name.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"question", "statement": q.question_statement} for q in questions])
+
+    return jsonify(results)
+
+@admin.route('/api/admin/export-users-data', methods=['GET'])
+@token_required(role='admin')
+def admin_csv(user):
+     from tasks import export_all_users_data
+     task = export_all_users_data.delay()
+     return jsonify({"message":"CSV export started","task_id":task.id})

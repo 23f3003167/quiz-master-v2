@@ -10,6 +10,7 @@ import UserDashboard from '@/views/UserDashboard.vue'
 import AttemptQuiz from '@/views/AttemptQuiz.vue'
 import UserScores from '@/views/UserScores.vue'
 import UserSummary from '@/views/UserSummary.vue'
+import AdminDashboard from '@/views/AdminDashboard.vue'
 
 const routes = [
   {
@@ -51,8 +52,13 @@ const routes = [
     props: route => ({quiz_id: route.params.id})
   },
   {
+    path: '/admin/dashboard',
+    name: 'Admin Dashboard',
+    component: AdminDashboard
+  },
+  {
     path: '/user/quizzes/:id/attempt',
-    name: 'AttemptQuiz',
+    name: 'Attempt Quiz',
     component: AttemptQuiz
   },
   {
