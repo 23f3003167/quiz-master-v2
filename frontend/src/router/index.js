@@ -7,6 +7,9 @@ import QuizView from '@/views/QuizView.vue'
 import QuestionView from '@/views/QuestionView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import UserDashboard from '@/views/UserDashboard.vue'
+import AttemptQuiz from '@/views/AttemptQuiz.vue'
+import UserScores from '@/views/UserScores.vue'
+import UserSummary from '@/views/UserSummary.vue'
 
 const routes = [
   {
@@ -48,9 +51,24 @@ const routes = [
     props: route => ({quiz_id: route.params.id})
   },
   {
+    path: '/user/quizzes/:id/attempt',
+    name: 'AttemptQuiz',
+    component: AttemptQuiz
+  },
+  {
     path: '/user/dashboard',
     name: 'User Dashboard',
     component: UserDashboard
+  },
+  {
+    path: '/user/scores',
+    name: 'User Scores',
+    component: UserScores
+  },
+  {
+    path: '/user/summary',
+    name: 'User Summary',
+    component: UserSummary
   }
 ]
 

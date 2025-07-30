@@ -7,9 +7,15 @@
             <form @submit.prevent="submitQuiz">
                 <div v-for="(q, index) in questions" :key="q.id" class="mb-4">
                     <p class="fw-semibold">{{ index+1 }}.{{ q.question_statement }}</p>
-                    <div v-for="option in 4" :key="option" class="form-check">
-                        <input class="form-check-input" type="radio" :name="'question_'+q.id" :value="option" v-model="answers[q.id]" />
-                        <label class="form-check-label">{{ q['option_'+opt] }}</label>
+                    <div v-for="n in 4" :key="n" class="form-check">
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            :name="'question_' + q.id"
+                            :value="n"
+                            v-model="answers[q.id]"
+                        />
+                        <label class="form-check-label">{{ q['option_' + n] }}</label>
                     </div>
                 </div>
 
@@ -27,11 +33,12 @@ import axios from 'axios'
 export default {
     data() {
         return {
-            quiz: [],
+            quiz: {},
             questions: [],
             answers: {},
             timeLeft: 0,
             timeText: '',
+            startTime: null,
             token: localStorage.getItem("token")
         }
     },
@@ -40,34 +47,50 @@ export default {
             const quiz_id = this.$route.params.id
             axios.get(`http://localhost:5000/api/user/quizzes/${quiz_id}/questions`, {headers: {Authorization: this.token}})
             .then(res => {
+                console.log("Quiz Data:", res.data.quiz)
+                console.log("Questions:", res.data.questions)
                 this.quiz = res.data.quiz,
                 this.questions = res.data.questions,
-                this.timeLeft = parseInt(this.quiz.time_duration) * 60
+                this.startTime = new Date().toISOString()
+                const [min, sec] = this.quiz.time_duration.split(":").map(Number)
+                this.timeLeft = (min * 60) + sec
                 this.startTimer()
+            })
+            .catch(err => {
+                console.error("Error fetching quiz questions", err)
             })
         },
         startTimer() {
-            let interval = setInterval(() => {
-                const min = Math.floor(this.timeLeft/60).toString.padStart(2,'0')
-                const sec = (this.timeLeft%60).toString.padStart(2,'0')
+            this.timer = setInterval(() => {
+                const min = Math.floor(this.timeLeft/60).toString().padStart(2,'0')
+                const sec = (this.timeLeft%60).toString().padStart(2,'0')
                 this.timeText = `Time Remaining: ${min}:${sec}`
                 if (this.timeLeft <= 0) {
-                    clearInterval(interval)
+                    clearInterval(this.timer)
                     this.submitQuiz()
                 }
                 this.timeLeft--;
             }, 1000)
         },
         submitQuiz() {
+            clearInterval(this.timer)
             const quiz_id = this.$route.params.id
-            axios.get(`http://localhost:5000/api/user/quizzes/${quiz_id}/submit`, this.answers, {headers: {Authorization: this.token}})
+            const payload = {
+                start_time: this.startTime,
+                answers: Object.keys(this.answers).map(qid => ({
+                    question_id: parseInt(qid),
+                    selected: parseInt(this.answers[qid])
+                }))
+            }
+            axios.post(`http://localhost:5000/api/user/quizzes/${quiz_id}/submit`, payload , {headers: {Authorization: this.token}})
             .then(res => {
-                alert(res.data.message)
+                alert(`${res.data.message}\nScore: ${res.data.score}\nTime: ${res.data.time}`)
                 this.$router.push("/user/dashboard")
             })
         }
     },
     mounted() {
+        console.log("AttemptQuiz.vue mounted")
         this.fetchQuestions()
     }
 }

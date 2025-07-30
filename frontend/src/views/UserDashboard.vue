@@ -92,7 +92,7 @@ export default {
             new Modal(document.getElementById("quizModal")).show()
         },
         attempt(id) {
-            this.$router.push(`/attempt/${id}`)
+            this.$router.push(`/user/quizzes/${id}/attempt`)
         }
     },
     mounted() {

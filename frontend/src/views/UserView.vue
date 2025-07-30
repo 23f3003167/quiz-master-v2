@@ -13,7 +13,7 @@
             <tbody>
                 <tr v-for="u in users" :key="u.id">
                     <td>{{ u.full_name }}</td>
-                    <td>{{ u.username }}</td>
+                    <td>{{ u.email }}</td>
                     <td>{{ u.qualification }}</td>
                     <td>{{ u.dob }}</td>
                 </tr>

@@ -4,7 +4,7 @@
         <form @submit.prevent="add">
             <input v-model="title" placeholder="Title" class="form-control mb-2" />
             <input v-model="date_of_quiz" type="date" class="form-control mb-2" />
-            <input v-model="time_duration" placeholder="HH:MM" class="form-control mb-2" />
+            <input v-model="time_duration" placeholder="MM:SS" class="form-control mb-2" />
             <textarea v-model="remarks" placeholder="Remarks" class="form-control mb-2" />
             <button class="btn btn-primary">Add</button>
         </form>

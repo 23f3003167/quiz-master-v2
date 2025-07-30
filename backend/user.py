@@ -1,7 +1,7 @@
 from auth import token_required
-from flask import Blueprint, jsonify, json, request
+from flask import Blueprint, jsonify, json, request, g
 from models import db, Quiz, User, Chapter, Question, Subject, Score
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 user = Blueprint("user", __name__)
 
@@ -48,8 +48,11 @@ def get_quiz_questions(current_user, quiz_id):
 def submit_quiz(current_user, quiz_id):
     data = request.json
     answers = data.get("answers",[])
-    start_time = datetime.fromisoformat(data.get("start_time"))
-    end_time = datetime.now()
+    start_time_str = data.get("start_time")
+    if not start_time_str:
+        return jsonify({"error": "Missing start Time"}), 400
+    start_time = datetime.fromisoformat(start_time_str)
+    end_time = datetime.now(timezone.utc)
 
     score = 0
     for ans in answers:
@@ -73,22 +76,40 @@ def submit_quiz(current_user, quiz_id):
     )
     db.session.commit()
 
-    return jsonify({"message": "Quiz submitted", "score": score, "time": f"{minutes} minutes {seconds} seconds"})
+    return jsonify({"message": "Quiz submitted", "score": score, "time": f"{minutes:02}:{seconds:02}"})
 
 @user.route("/api/user/scores", methods=['GET'])
 @token_required(role='user')
-def user_scores():
-    scores = Score.query.filter_by(user_id=g.user.id).order_by(Score.time_stamp_of_attempt.desc()).all()
+def user_scores(current_user):
+    scores = Score.query.filter_by(user_id=current_user.id).order_by(Score.time_stamp_of_attempt.desc()).all()
     data = []
     for score in scores:
         quiz = score.quiz
-        question_count = len(quiz.questions)
+        question_count = quiz.questions.count()
+        ist_time = score.time_stamp_of_attempt + timedelta(hours=5, minutes=30)
         data.append({
             "title": quiz.title,
-            "attempted on": score.time_stamp_of_attempt.strftime("%d-%m-%Y %H:%M:%S"),
+            "attempted_on": ist_time.strftime("%d-%m-%Y %H:%M:%S"),
             "total_scored": score.total_scored,
             "question_count": question_count,
             "completion_minutes": score.completion_minutes,
             "completion_seconds": score.completion_seconds,
         })
     return jsonify(data)
+
+@user.route("/api/user/summary", methods=['GET'])
+@token_required(role='user')
+def quiz_summary(current_user):
+    scores = Score.query.filter_by(user_id=current_user.id).all()
+    highest_scores = {}
+    for score in scores:
+        quiz_title = score.quiz.title
+        if quiz_title in highest_scores:
+            highest_scores[quiz_title] = max(highest_scores[quiz_title], score.total_scored)
+        else:
+            highest_scores[quiz_title] = score.total_scored
+        
+    return jsonify({
+        "quiz_titles": list(highest_scores.keys()),
+        "scores_list": list(highest_scores.values())
+    })

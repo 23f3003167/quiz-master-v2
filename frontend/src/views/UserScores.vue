@@ -18,7 +18,7 @@
                     <td>{{ s.attempted_on }}</td>
                     <td>{{ s.question_count }}</td>
                     <td>{{ s.total_scored }}</td>
-                    <td>{{ s.completion_minutes }}m {{ s.completion_seconds }}</td>
+                    <td>{{ s.completion_minutes }}m {{ s.completion_seconds }}s</td>
                 </tr>
                 <tr v-if="scores.length==0">
                     <td colspan="5">No Quiz Attempts</td>
@@ -41,7 +41,7 @@ export default {
     },
     methods: {
         fetch() {
-            axios.get("http://localhost:5000/api/user/scores", {headers: {Authorisation: this.token}})
+            axios.get("http://localhost:5000/api/user/scores", {headers: {Authorization: this.token}})
             .then(res => this.scores = res.data)
         }
     },
