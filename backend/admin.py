@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, current_app
 from auth import token_required
 from models import db, User, Subject, Chapter, Quiz, Question, Score
 from datetime import datetime
+from app import cache, limiter
 
 admin = Blueprint("admin", __name__)
 
@@ -19,6 +20,7 @@ def view_users(current_user):
 
 
 @admin.route("/api/admin/subjects", methods=['POST'])
+@limiter.limit("2 per minute")
 @token_required(role='admin')
 def create_subject(current_user):
     data = request.json
@@ -33,6 +35,7 @@ def create_subject(current_user):
     return jsonify({"message":"Subject created successfully!"}), 201
     
 @admin.route("/api/admin/subjects", methods=['GET'])
+@cache.cached(timeout=60)
 @token_required(role='admin')
 def read_subjects(current_user):
     subjects = Subject.query.all()

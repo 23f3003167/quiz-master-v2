@@ -2,10 +2,13 @@ from auth import token_required
 from flask import Blueprint, jsonify, json, request, g
 from models import db, Quiz, User, Chapter, Question, Subject, Score
 from datetime import datetime, timezone, timedelta
+from app import cache, Limiter
 
 user = Blueprint("user", __name__)
 
 @user.route("/api/user/quizzes", methods=['GET'])
+@Limiter.limit("10/minute")
+@cache.cached(timeout=60)
 @token_required(role='user')
 def view_quizzes(current_user):
     quizzes = Quiz.query.join(Chapter).join(Subject).all()

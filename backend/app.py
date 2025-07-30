@@ -6,6 +6,9 @@ from flask_cors import CORS
 from user import user
 from celery import Celery
 from flask_mail import Mail, Message
+from flask_caching import Cache
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 CORS(app)
@@ -59,6 +62,17 @@ def run_monthly():
     from tasks import send_monthly_report
     send_monthly_report.delay()
     return "Monthly Report Task Triggered"
+
+cache = Cache(app, config={
+    "CACHE_TYPE": 'RedisCache',
+    'CACHE_REDIS_URL': 'redis://localhost:6379/0'
+})
+
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    storage_uri="redis://localhost:6379"
+)
 
 if __name__=="__main__":
     with app.app_context():
