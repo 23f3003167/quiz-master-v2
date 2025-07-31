@@ -1,13 +1,13 @@
 from auth import token_required
 from flask import Blueprint, jsonify, json, request, g
-from models import db, Quiz, User, Chapter, Question, Subject, Score
+from models import Quiz, User, Chapter, Question, Subject, Score
 from datetime import datetime, timezone, timedelta
-from app import cache, Limiter
+from extensions import db, cache, limiter
 
 user = Blueprint("user", __name__)
 
 @user.route("/api/user/quizzes", methods=['GET'])
-@Limiter.limit("10/minute")
+@limiter.limit("10 per minute")
 @cache.cached(timeout=60)
 @token_required(role='user')
 def view_quizzes(current_user):
@@ -119,7 +119,7 @@ def quiz_summary(current_user):
 
 @user.route("/api/user/search", methods=['POST'])
 @token_required(role='user')
-def user_search():
+def user_search(user):
     data = request.json
     search_term = data.get("search_term","").strip()
     filter_by = data.get("filter_by",[])

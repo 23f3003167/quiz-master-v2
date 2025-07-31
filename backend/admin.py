@@ -1,10 +1,31 @@
-from flask import Blueprint, jsonify, request, current_app
+from flask import Blueprint, jsonify, request
 from auth import token_required
-from models import db, User, Subject, Chapter, Quiz, Question, Score
+from models import User, Subject, Chapter, Quiz, Question, Score
 from datetime import datetime
-from app import cache, limiter
+from extensions import db, cache, limiter
 
 admin = Blueprint("admin", __name__)
+
+@admin.route("/api/admin/dashboard-data", methods=['GET'])
+@token_required(role='admin')
+def get_admin_dashboard_data(current_user):
+    subject_list = []
+    subjects = Subject.query.all()
+    for subject in subjects:
+        chapters_data = []
+        for chapter in subject.chapters:
+            quiz_count = Quiz.query.filter_by(chapter_id=chapter.id).count()
+            chapters_data.append({
+                "id": chapter.id,
+                "name": chapter.name,
+                "quiz_count": quiz_count
+            })
+        subject_list.append({
+            "id": subject.id,
+            "name": subject.name,
+            "chapters": chapters_data
+        })
+    return jsonify({"subjects": subject_list})
 
 @admin.route('/api/admin/users', methods=['GET'])
 @token_required(role='admin')
@@ -61,7 +82,7 @@ def delete_subject(current_user, id):
     db.session.commit()
     return jsonify({"message":"Subject deleted successfully!"})
 
-@admin.route("/api/admin/<int:subject_id>/chapters", methods=['POST'])
+@admin.route("/api/admin/subjects/<int:subject_id>/chapters", methods=['POST'])
 @token_required(role='admin')
 def create_chapter(current_user, subject_id):
     data = request.json
@@ -75,7 +96,7 @@ def create_chapter(current_user, subject_id):
     db.session.commit()
     return jsonify({"message":"Chapter created successfully"}), 201
 
-@admin.route("/api/admin/<int:subject_id>/chapters", methods=['GET'])
+@admin.route("/api/admin/subjects/<int:subject_id>/chapters", methods=['GET'])
 @token_required(role='admin')
 def read_chapters(current_user, subject_id):
     chapters = Chapter.query.filter_by(subject_id=subject_id).all()
@@ -197,7 +218,7 @@ def delete_question(current_user, id):
 
 @admin.route("/api/admin/search", methods=['POST'])
 @token_required(role='admin')
-def admin_search():
+def admin_search(user):
     data = request.json
     search_term = data.get("search_term","").strip()
     filter_by = data.get("filter_by",[])
@@ -208,13 +229,13 @@ def admin_search():
             subjects = Subject.query.filter(Subject.name.ilike(f"%{search_term}%")).all()
             results.extend([{"type":"subject", "name": s.name} for s in subjects])
     if "quizzes" in filter_by:
-            quizzes = Quiz.query.filter(Quiz.name.ilike(f"%{search_term}%")).all()
-            results.extend([{"type":"quiz", "name": q.name} for q in quizzes])
+            quizzes = Quiz.query.filter(Quiz.title.ilike(f"%{search_term}%")).all()
+            results.extend([{"type":"quiz", "title": q.title} for q in quizzes])
     if "users" in filter_by:
-            users = User.query.filter(User.name.ilike(f"%{search_term}%")).all()
+            users = User.query.filter(User.full_name.ilike(f"%{search_term}%")).all()
             results.extend([{"type":"user", "name": u.full_name, "email":u.username} for u in users])
     if "questions" in filter_by:
-            questions = Question.query.filter(Question.name.ilike(f"%{search_term}%")).all()
+            questions = Question.query.filter(Question.question_statement.ilike(f"%{search_term}%")).all()
             results.extend([{"type":"question", "statement": q.question_statement} for q in questions])
 
     return jsonify(results)
@@ -225,3 +246,32 @@ def admin_csv(user):
      from tasks import export_all_users_data
      task = export_all_users_data.delay()
      return jsonify({"message":"CSV export started","task_id":task.id})
+
+@admin.route('/api/admin/summary', methods=['GET'])
+@token_required(role='admin')
+def quiz_summary(user):
+    subjects = Subject.query.all()
+    top_scores = {}
+
+    for subject in subjects:
+        quizzes = Quiz.query.join(Chapter).filter(Chapter.subject_id == subject.id).all()
+        quiz_ids = [q.id for q in quizzes]
+
+        if not quiz_ids:
+               continue
+          
+        top_result = (
+               db.session.query(Score)
+               .filter(Score.quiz_id.in_(quiz_ids))
+               .order_by(Score.total_scored.desc())
+               .first()
+        )
+
+        if top_result:
+            user = User.query.get(top_result.user_id)
+            top_scores[subject.name] = {
+                "score": top_result.total_scored,
+                "user": user.full_name if user else "Unknown"
+            }
+
+    return jsonify({"top_scores": top_scores})
