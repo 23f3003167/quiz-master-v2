@@ -1,5 +1,5 @@
 from auth import token_required
-from flask import Blueprint, jsonify, json, request, g
+from flask import Blueprint, jsonify, json, request, session
 from models import Quiz, User, Chapter, Question, Subject, Score
 from datetime import datetime, timezone, timedelta
 from extensions import db, cache, limiter
@@ -24,62 +24,75 @@ def view_quizzes(current_user):
         })
     return jsonify(data)
 
-@user.route("/api/user/quizzes/<int:quiz_id>/questions", methods=['GET'])
+from datetime import datetime
+
+@user.route("/user/quizzes/<int:quiz_id>/attempt", methods=["GET", "POST"])
 @token_required(role='user')
-def get_quiz_questions(current_user, quiz_id):
+def attempt_quiz(current_user, quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     questions = Question.query.filter_by(quiz_id=quiz_id).all()
-    return jsonify({
-        "quiz": {
-            "title": quiz.title,
-            "time_duration": quiz.time_duration
-        },
-        "questions": [
-            {
-                "id": q.id,
-                "question_statement": q.question_statement,
-                "option_1": q.option_1,
-                "option_2": q.option_2,
-                "option_3": q.option_3,
-                "option_4": q.option_4
-            } for q in questions
-        ]
-    })
 
-@user.route("/api/user/quizzes/<int:quiz_id>/submit", methods=["POST"])
-@token_required(role="user")
-def submit_quiz(current_user, quiz_id):
-    data = request.json
-    answers = data.get("answers",[])
-    start_time_str = data.get("start_time")
-    if not start_time_str:
-        return jsonify({"error": "Missing start Time"}), 400
-    start_time = datetime.fromisoformat(start_time_str)
-    end_time = datetime.now(timezone.utc)
+    if request.method == "GET":
+        return jsonify({
+            "quiz": {
+                "id": quiz.id,
+                "title": quiz.title,
+                "time_duration": quiz.time_duration
+            },
+            "questions": [
+                {
+                    "id": q.id,
+                    "statement": q.question_statement,
+                    "options": [q.option_1, q.option_2, q.option_3, q.option_4]
+                } for q in questions
+            ]
+        })
 
-    score = 0
-    for ans in answers:
-        question = Question.query.get(ans["question_id"])
-        if question and question.correct_option == ans["selected"]:
-            score +=1
-    
-    time_taken = (end_time - start_time).seconds
-    minutes = time_taken//60
-    seconds = time_taken%60
+    if request.method == "POST":
+        data = request.get_json()
+        answers = data.get("answers", {})
+        score = 0
 
-    db.session.add(
-        Score(
+        for q in questions:
+            selected = answers.get(str(q.id))
+            if selected and int(selected) == q.correct_option:
+                score += 1
+
+        start_time = data.get("start_time")
+        end_time = datetime.now(timezone.utc)
+        if start_time:
+            try:
+                start = datetime.fromisoformat(start_time)
+                if start.tzinfo is not None:
+                    start = start.astimezone(timezone.utc)
+                else:
+                    start = start.replace(tzinfo=timezone.utc)
+                duration = (end_time - start).seconds
+                minutes = duration // 60
+                seconds = duration % 60
+            except Exception as e:
+                minutes, seconds = 0, 0
+        else:
+            minutes, seconds = 0, 0
+
+        new_score = Score(
             quiz_id=quiz_id,
-            user_id = current_user.id,
-            time_stamp_of_attempt = end_time,
-            total_scored = score,
-            completion_minutes = minutes,
-            completion_seconds = seconds
+            user_id=current_user.id,
+            time_stamp_of_attempt=end_time,
+            total_scored=score,
+            completion_minutes=minutes,
+            completion_seconds=seconds
         )
-    )
-    db.session.commit()
+        db.session.add(new_score)
+        db.session.commit()
 
-    return jsonify({"message": "Quiz submitted", "score": score, "time": f"{minutes:02}:{seconds:02}"})
+        return jsonify({
+            "message": "Quiz submitted!",
+            "score": score,
+            "total": len(questions),
+            "minutes": minutes,
+            "seconds": seconds
+        })
 
 @user.route("/api/user/scores", methods=['GET'])
 @token_required(role='user')

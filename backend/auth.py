@@ -14,7 +14,6 @@ def token_required(role=None):
             token = request.headers.get('Authorization')
             if not token:
                  return jsonify({"message": "Token missing"}), 403
-            
             try:
                 data = jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=['HS256'])
                 user = User.query.get(data['user_id'])

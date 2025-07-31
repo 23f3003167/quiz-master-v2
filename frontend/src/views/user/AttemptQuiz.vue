@@ -1,110 +1,107 @@
 <template>
-    <div class="p-4">
-        <nav class="bg-light p-3 d-flex justify-content-between mb-4">
-            <div>
-                <router-link to="/user/dashboard" class="me-3">Home</router-link>
-                <router-link to="/user/scores" class="me-3">Scores</router-link>
-                <router-link to="/user/summary" class="me-3">Summary</router-link>
-                <router-link to="/" class="text-danger">Logout</router-link>
-            </div>
-            <button @click="$router.push('/user/search')" class="btn btn-primary">Search</button>
-        </nav>
-        <div class="container mt-5">
-        <div class="card shadow p-4">
-            <h1 class="text-center text-primary">{{ quiz.title }}</h1>
-            <h4 id="timer" class="text-center text-danger fw-bold">{{ timeText }}</h4>
+  <div class="container mt-5">
+    <div v-if="quiz && questions.length" class="card shadow p-4">
+      <h2 class="text-center text-primary">{{ quiz.title }}</h2>
+      <h4 class="text-center text-danger fw-bold">{{ timerText }}</h4>
 
-            <form @submit.prevent="submitQuiz" class="mt-4">
-                <div v-for="(q, index) in questions" :key="q.id" class="mb-4">
-                    <p class="fw-semibold">{{ index+1 }}.{{ q.question_statement }}</p>
-                    <div v-for="n in 4" :key="n" class="form-check">
-                        <input
-                            class="form-check-input"
-                            type="radio"
-                            :name="'question_' + q.id"
-                            :value="n"
-                            v-model="answers[q.id]"
-                            required
-                        />
-                        <label class="form-check-label">{{ q['option_' + n] }}</label>
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-between mt-4">
-                    <router-link to="/user/dashboard" class="btn btn-secondary">Back to Dashboard</router-link>
-                    <button type="submit" class="btn btn-success">Submit Quiz</button>
-                </div>
-            </form>
+      <form @submit.prevent="submitQuiz">
+        <div v-for="(q, index) in questions" :key="q.id" class="mb-4">
+          <p class="fw-semibold">{{ index + 1 }}. {{ q.statement }}</p>
+          <div v-for="(opt, idx) in q.options" :key="idx" class="form-check">
+            <input
+              type="radio"
+              class="form-check-input"
+              :name="'question_' + q.id"
+              :value="idx + 1"
+              v-model="userAnswers[q.id]"
+              required
+            />
+            <label class="form-check-label">{{ opt }}</label>
+          </div>
         </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <router-link to="/dashboard" class="btn btn-secondary">Back to Dashboard</router-link>
+          <button class="btn btn-success" type="submit">Submit Quiz</button>
+        </div>
+      </form>
     </div>
+    <div v-else>
+      <p>Loading quiz...</p>
     </div>
+  </div>
 </template>
 
 <script>
-import axios from 'axios'
+import axios from "axios";
+
 export default {
-    data() {
-        return {
-            quiz: {},
-            questions: [],
-            answers: {},
-            timeRemaining: 0,
-            timeText: '',
-            startTime: null,
-            token: localStorage.getItem("token"),
-            timer: null
-        }
+  name: "AttemptQuiz",
+  data() {
+    return {
+      quiz: null,
+      startTime: null,
+      questions: [],
+      userAnswers: {},
+      timer: 0,
+      timerText: "",
+      interval: null,
+      token: localStorage.getItem("token")
+    };
+  },
+  methods: {
+    async fetchQuiz() {
+      try {
+        const res = await axios.get(`http://localhost:5000/user/quizzes/${this.$route.params.id}/attempt`, {
+          headers: {
+            Authorization: this.token
+          }
+        });
+        this.quiz = res.data.quiz;
+        this.questions = res.data.questions;
+        this.timer = parseInt(this.quiz.time_duration) * 60;
+        this.startTime = new Date().toISOString();
+        this.startTimer();
+      } catch (err) {
+        console.error("Quiz fetch error:", err.response?.data || err.message);
+        alert("Quiz could not be loaded. Check console for details.");
+      }
     },
-    methods: {
-        fetchQuestions() {
-            const quiz_id = this.$route.params.id
-            axios.get(`http://localhost:5000/api/user/quizzes/${quiz_id}/questions`, {headers: {Authorization: this.token}})
-            .then(res => {
-                console.log("Quiz Data:", res.data.quiz)
-                console.log("Questions:", res.data.questions)
-                this.quiz = res.data.quiz,
-                this.questions = res.data.questions,
-                this.startTime = new Date().toISOString()
-                const [min, sec] = this.quiz.time_duration.split(":").map(Number)
-                this.timeRemaining = (min * 60) + sec
-                this.startTimer()
-            })
-            .catch(err => {
-                console.error("Error fetching quiz questions", err)
-            })
-        },
-        startTimer() {
-            this.timer = setInterval(() => {
-                const min = Math.floor(this.timeRemaining/60).toString().padStart(2,'0')
-                const sec = (this.timeRemaining%60).toString().padStart(2,'0')
-                this.timeText = `Time Remaining: ${min}:${sec}`
-                if (this.timeRemaining <= 0) {
-                    clearInterval(this.timer)
-                    this.submitQuiz()
-                }
-                this.timeRemaining--;
-            }, 1000)
-        },
-        submitQuiz() {
-            clearInterval(this.timer)
-            const quiz_id = this.$route.params.id
-            const payload = {
-                start_time: this.startTime,
-                answers: Object.keys(this.answers).map(qid => ({
-                    question_id: parseInt(qid),
-                    selected: parseInt(this.answers[qid])
-                }))
-            }
-            axios.post(`http://localhost:5000/api/user/quizzes/${quiz_id}/submit`, payload , {headers: {Authorization: this.token}})
-            .then(res => {
-                alert(`${res.data.message}\nScore: ${res.data.score}\nTime: ${res.data.time}`)
-                this.$router.push("/user/dashboard")
-            })
+    startTimer() {
+      this.interval = setInterval(() => {
+        const min = Math.floor(this.timer / 60).toString().padStart(2, "0");
+        const sec = (this.timer % 60).toString().padStart(2, "0");
+        this.timerText = `Time Remaining: ${min}:${sec}`;
+        if (this.timer <= 0) {
+          clearInterval(this.interval);
+          this.submitQuiz();
         }
+        this.timer--;
+      }, 1000);
     },
-    mounted() {
-        console.log("AttemptQuiz.vue mounted")
-        this.fetchQuestions()
+    async submitQuiz() {
+      clearInterval(this.interval);
+      try {
+        const res = await axios.post(`http://localhost:5000/user/quizzes/${this.$route.params.id}/attempt`, {
+          answers: this.userAnswers,
+          start_time: this.startTime
+        }, {
+          headers: {
+            Authorization: this.token
+          }
+        });
+        alert(
+          `Submitted! Score: ${res.data.score}/${res.data.total} in ${res.data.minutes}m ${res.data.seconds}s`
+        );
+        this.$router.push("/user/dashboard");
+      } catch (err) {
+        console.error("Submit error:", err.response?.data || err.message);
+        alert("Submission failed.");
+      }
     }
-}
+  },
+  mounted() {
+    this.fetchQuiz();
+  }
+};
 </script>
