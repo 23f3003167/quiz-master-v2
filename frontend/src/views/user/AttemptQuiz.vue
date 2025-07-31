@@ -1,10 +1,20 @@
 <template>
-    <div class="container mt-5">
+    <div class="p-4">
+        <nav class="bg-light p-3 d-flex justify-content-between mb-4">
+            <div>
+                <router-link to="/user/dashboard" class="me-3">Home</router-link>
+                <router-link to="/user/scores" class="me-3">Scores</router-link>
+                <router-link to="/user/summary" class="me-3">Summary</router-link>
+                <router-link to="/" class="text-danger">Logout</router-link>
+            </div>
+            <button @click="$router.push('/user/search')" class="btn btn-primary">Search</button>
+        </nav>
+        <div class="container mt-5">
         <div class="card shadow p-4">
-            <h2>{{quiz.title}}</h2>
+            <h1 class="text-center text-primary">{{ quiz.title }}</h1>
             <h4 id="timer" class="text-center text-danger fw-bold">{{ timeText }}</h4>
 
-            <form @submit.prevent="submitQuiz">
+            <form @submit.prevent="submitQuiz" class="mt-4">
                 <div v-for="(q, index) in questions" :key="q.id" class="mb-4">
                     <p class="fw-semibold">{{ index+1 }}.{{ q.question_statement }}</p>
                     <div v-for="n in 4" :key="n" class="form-check">
@@ -14,17 +24,19 @@
                             :name="'question_' + q.id"
                             :value="n"
                             v-model="answers[q.id]"
+                            required
                         />
                         <label class="form-check-label">{{ q['option_' + n] }}</label>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-between mt-4">
-                    <router-link to="/user" class="btn btn-secondary">Back to Dashboard</router-link>
+                    <router-link to="/user/dashboard" class="btn btn-secondary">Back to Dashboard</router-link>
                     <button type="submit" class="btn btn-success">Submit Quiz</button>
                 </div>
             </form>
         </div>
+    </div>
     </div>
 </template>
 
@@ -39,7 +51,8 @@ export default {
             timeRemaining: 0,
             timeText: '',
             startTime: null,
-            token: localStorage.getItem("token")
+            token: localStorage.getItem("token"),
+            timer: null
         }
     },
     methods: {

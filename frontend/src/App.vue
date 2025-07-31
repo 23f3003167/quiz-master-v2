@@ -1,34 +1,20 @@
 <template>
-  <nav>
-    <router-link to="/">Home</router-link> |
-    <router-link to="/admin/subjects">Subjects</router-link> | 
-    <router-link to="/admin/subjects/1/chapters">Chapters</router-link> |
-    <router-link to="/admin/chapters/1/quizzes">Quizzes</router-link> | 
-    <router-link to="/admin/quizzes/1/questions">Questions</router-link> |
-    <router-link to="/admin/users">Registered Users</router-link>
-  </nav>
-  <router-view/>
+  <div id="app">
+    <router-view />
+  </div>
 </template>
 
+<script>
+export default {
+  name: "App"
+}
+</script>
+
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f5f5f5;
+  margin: 0;
+  padding: 0;
 }
 </style>

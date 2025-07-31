@@ -1,5 +1,14 @@
 <template>
-     <div class="container mt-5">
+     <div class="p-4">
+        <nav class="bg-light p-3 d-flex justify-content-between mb-4">
+            <div>
+                <router-link to="/user/dashboard" class="me-3">Home</router-link>
+                <router-link to="/user/scores" class="me-3">Scores</router-link>
+                <router-link to="/user/summary" class="me-3">Summary</router-link>
+                <router-link to="/" class="text-danger">Logout</router-link>
+            </div>
+            <button @click="$router.push('/user/search')" class="btn btn-primary">Search</button>
+        </nav>
     <div class="card shadow p-4">
       <h2 class="text-center text-primary">Your Quiz Performance</h2>
       <div class="chart-container" style="position: relative; height: 300px;">

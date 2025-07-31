@@ -1,16 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import LoginView from '../views/LoginView.vue'
-import UserView from '../views/UserView.vue'
-import SubjectView from '../views/SubjectView.vue'
-import ChapterView from '../views/ChapterView.vue'
-import QuizView from '@/views/QuizView.vue'
-import QuestionView from '@/views/QuestionView.vue'
-import RegisterView from '@/views/RegisterView.vue'
-import UserDashboard from '@/views/UserDashboard.vue'
-import AttemptQuiz from '@/views/AttemptQuiz.vue'
-import UserScores from '@/views/UserScores.vue'
-import UserSummary from '@/views/UserSummary.vue'
-import AdminDashboard from '@/views/AdminDashboard.vue'
+import LoginView from '../views/auth/LoginView.vue'
+import UserView from '../views/admin/UsersView.vue'
+import SubjectView from '../views/admin/SubjectView.vue'
+import ChapterView from '../views/admin/ChapterView.vue'
+import QuizView from '@/views/admin/QuizView.vue'
+import QuestionView from '@/views/admin/QuestionView.vue'
+import RegisterView from '@/views/auth/RegisterView.vue'
+import UserDashboard from '@/views/user/UserDashboard.vue'
+import AttemptQuiz from '@/views/user/AttemptQuiz.vue'
+import UserScores from '@/views/user/UserScores.vue'
+import UserSummary from '@/views/user/UserSummary.vue'
+import UserSearch from '@/views/user/UserSearch.vue'
+import AdminDashboard from '@/views/admin/AdminDashboard.vue'
+import AdminSearch from '@/views/admin/AdminSearch.vue'
+import AdminSummary from '@/views/admin/AdminSummary.vue'
 
 const routes = [
   {
@@ -57,6 +60,16 @@ const routes = [
     component: AdminDashboard
   },
   {
+    path: '/admin/search',
+    name: 'Admin Search',
+    component: AdminSearch
+  },
+  {
+    path: '/admin/summary',
+    name: 'Admin Summary',
+    component: AdminSummary
+  },
+  {
     path: '/user/quizzes/:id/attempt',
     name: 'Attempt Quiz',
     component: AttemptQuiz
@@ -75,6 +88,11 @@ const routes = [
     path: '/user/summary',
     name: 'User Summary',
     component: UserSummary
+  },
+  {
+    path: '/user/search',
+    name: 'User Search',
+    component: UserSearch
   }
 ]
 
